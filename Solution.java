@@ -71,6 +71,9 @@ public class Solution {
                     int idJ = in.nextInteger();
 
                     break;
+
+                case "MOVE":
+                    sofitaPosition = in.nextInteger();
             
                 default:
                     break;
@@ -107,15 +110,21 @@ public class Solution {
 
     static class Graph {
         int size;
-        long[][] adjacencyMatrix;
+        Map<Integer, List<Integer[]>> adjacencyList;  // fromId -> (toId, panjangJalan)
 
         Graph(int V) {
-            adjacencyMatrix = new long[V][V];
             size = V;
+            adjacencyList = new HashMap<>();
+            for (int i=1; i<=V; i++) {
+                adjacencyList.put(i, new ArrayList<Integer[]>());
+            }
         }
 
         void addEdge(int from, int to, int panjang) {
-            adjacencyMatrix[from-1][to-1] = adjacencyMatrix[to-1][from-1] = panjang;
+            List<Integer[]> fromList = adjacencyList.get(from);
+            fromList.add(new Integer[]{to, panjang});
+            List<Integer[]> toList = adjacencyList.get(to);
+            toList.add(new Integer[]{from, panjang});
         }
 
         Set<Integer> maximumKotaVisited(int from, int energi) {
@@ -123,18 +132,21 @@ public class Solution {
             Queue<Integer> queue = new LinkedList<>();
 
             // Doing breadth first search
-            from--;
             queue.add(from);
 
             while(!queue.isEmpty()) {
                 int explore = queue.poll();
-                for (int i=0; i<size; i++) {
-                    long visit = adjacencyMatrix[explore][i];
-                    if (visit != 0 && !visited.contains(i) && energi >= visit && i != from){
-                        visited.add(i);
-                        queue.add(i);
+                
+                List<Integer[]> jalanan = adjacencyList.get(explore);
+                for (Integer[] jalan : jalanan) {
+                    int toId = jalan[0];
+                    int panjangJalan = jalan[1];
+                    if (!visited.contains(toId) && energi >= panjangJalan && toId != from) {
+                        visited.add(toId);
+                        queue.add(toId);
                     }
                 }
+
             }
             return visited;
         }
