@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -58,6 +59,7 @@ public class Solution {
 
                 case "F":
                     int tujuan = in.nextInteger();
+                    out.println(F(graph, sofitaPosition, tujuan));
 
                     break;
 
@@ -74,6 +76,7 @@ public class Solution {
 
                 case "MOVE":
                     sofitaPosition = in.nextInteger();
+                    break;
             
                 default:
                     break;
@@ -112,12 +115,11 @@ public class Solution {
     static int F(Graph graph, int sofitaPosition, int tujuan) {
         // Cetak jarak terpendek ke kota dengan id [TUJUAN]
 
-        // TODO: Implement this method
-        return 0;
+        int res = graph.getShortest(sofitaPosition, tujuan);
+        return res;
     }
 
     static int M(int id, int password) {
-        // 
 
         // TODO: Implement this method
         return 0;
@@ -135,14 +137,17 @@ public class Solution {
         int[] energyNeededToTraverseAll;
         int[] energyMaxToNotTraverse;
         Map<Integer, Map<Integer, Integer>> mapMaxKotaVisited;  // Menyimpan output query R yang sudah dilakukan agar tidak double compute maxKotaVisited, id -> (energi -> maxKota)
+        int[][] shortestArr;
 
         Graph(int V) {
             size = V;
             adjacencyList = new ArrayList<>();
             mapMaxKotaVisited = new HashMap<>();
+            shortestArr = new int[V+1][V+1];
             for (int i = 0; i < V+1; i++) {
                 adjacencyList.add(new ArrayList<>());
                 mapMaxKotaVisited.put(i, new HashMap<>());
+                shortestArr[i] = null;
             }
             energyNeededToTraverseAll = new int[V+1];
             energyMaxToNotTraverse = new int[V+1];
@@ -150,9 +155,9 @@ public class Solution {
 
         void addEdge(int from, int to, int panjang) {
             List<Edge> fromList = adjacencyList.get(from);
-            fromList.add(new Edge(to, panjang));
+            fromList.add(new Edge(from, to, panjang));
             List<Edge> toList = adjacencyList.get(to);
-            toList.add(new Edge(from, panjang));
+            toList.add(new Edge(to, from, panjang));
         }
 
         int computeMaxKotaVisited(int from, int energi) {
@@ -189,19 +194,110 @@ public class Solution {
         }
 
 
-        Long[] dijkstra(int from) {
+        int[] dijkstra(int from) {
+            PriorityQueue<Edge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.panjangJalan, b.panjangJalan)); 
+            int[] shortest = new int[size+1];
+            boolean[] visited = new boolean[size+1];
+
+            Arrays.fill(shortest, Integer.MAX_VALUE);
             
+            visited[from] = true;
+            shortest[from] = 0;
+
+            for (Edge jalan : adjacencyList.get(from)) {
+                pq.offer(jalan);
+                shortest[jalan.toId] = jalan.panjangJalan;
+            }
+
+            // for (Edge jalan : pq) {
+            //     System.out.print("Edge: " + jalan.fromId + " to : " + jalan.toId + " (" + jalan.panjangJalan + ")");
+            //     System.out.println();
+            // }
+
+            while (!pq.isEmpty()) {
+                // System.out.println("Belum kosong");
+                Edge jalan = pq.poll();
+                // System.out.print("Exploring: ");
+                // jalan.print();
+
+                // System.out.println("======================");
+                // System.out.println("======================");
+                // System.out.println("Sebelum explore: ");
+                // for (Edge j : pq) {
+                //     System.out.print("Edge: " + j.fromId + " to : " + j.toId + " (" + j.panjangJalan + ")");
+                //     System.out.println();
+                // }
+                // System.out.println("======================");
+                // System.out.println("======================");
+
+                int fromId = jalan.fromId;
+                int toId = jalan.toId;
+
+                visited[fromId] = true;
+
+                // System.out.println("======================");
+                // System.out.println("Visited: " + Arrays.toString(visited));
+                // System.out.println("Shortest: " + Arrays.toString(shortest));
+                // System.out.println("======================");
+
+                for (Edge e : adjacencyList.get(toId)) {
+                    int totalPanjangJalan = shortest[e.fromId] + e.panjangJalan;
+                    // System.out.println("======================");
+                    // System.out.print("See edge: ");
+                    // e.print();
+
+                    // System.out.println("Total Panjang Jalan: " + shortest[e.fromId] + "(shortest[fromId]) + " + e.panjangJalan + "(e.panjangJalan)");
+                    // System.out.println("Total Panjang Jalan: " + totalPanjangJalan);
+
+                    // System.out.println("======================");
+                    if (!visited[e.toId] && totalPanjangJalan < shortest[e.toId]) {
+                        shortest[e.toId] = totalPanjangJalan;
+                        pq.offer(new Edge(e.fromId, e.toId, totalPanjangJalan));
+                    }
+                }
+
+                // System.out.println("======================");
+                // System.out.println("======================");
+
+                // System.out.println("Setelah explore: ");
+                // for (Edge j : pq) {
+                //     System.out.print("Edge: " + j.fromId + " to : " + j.toId + " (" + j.panjangJalan + ")");
+                //     System.out.println();
+                // }
+                // System.out.println("======================");
+                // System.out.println("======================");
+
+
+            }
+
+            // System.out.println("From: " + from + ". Array: " + Arrays.toString(shortest));
+
+            shortestArr[from] = shortest;
+            return shortest;
+        }
+
+        int getShortest(int from, int to) {
+            if (shortestArr[from] == null) {
+                return dijkstra(from)[to];
+            }
+            return shortestArr[from][to];
         }
 
     }
 
     static class Edge {
+        int fromId;
         int toId;
         int panjangJalan;
 
-        Edge(int to, int panjang) { 
+        Edge(int from, int to, int panjang) { 
+            fromId = from;
             toId = to;
             panjangJalan = panjang;
+        }
+
+        void print() {
+            System.out.println("Edge: " + fromId + " to " + toId + "(" + panjangJalan + ")");
         }
     }
 
