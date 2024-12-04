@@ -5,13 +5,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -67,10 +65,13 @@ public class Solution {
                     int idM = in.nextInteger();
                     int password = in.nextInteger();
 
+                    sofitaPosition = idM;
+
                     break;
 
                 case "J":
                     int idJ = in.nextInteger();
+                    out.println(J(graph, idJ));
 
                     break;
 
@@ -125,15 +126,14 @@ public class Solution {
         return 0;
     }
 
-    static int J(int id) {
-        // TODO: Implement this method
-        return 0;
+    static int J(Graph graph, int id) {
+        return graph.getMinSpanTree(id);
     }
 
     static class Graph {
         int size;
         List<List<Edge>> adjacencyList;  // arr[from] = arr[to] = panjangJalan
-        int[] shortestCostSpanningTree;
+        int[] minCostSpanningTreeArr;
         int[] energyNeededToTraverseAll;
         int[] energyMaxToNotTraverse;
         Map<Integer, Map<Integer, Integer>> mapMaxKotaVisited;  // Menyimpan output query R yang sudah dilakukan agar tidak double compute maxKotaVisited, id -> (energi -> maxKota)
@@ -151,6 +151,7 @@ public class Solution {
             }
             energyNeededToTraverseAll = new int[V+1];
             energyMaxToNotTraverse = new int[V+1];
+            minCostSpanningTreeArr = new int[V+1];
         }
 
         void addEdge(int from, int to, int panjang) {
@@ -282,6 +283,55 @@ public class Solution {
             }
             return shortestArr[from][to];
         }
+
+        int minSpanTree(int from) {
+            PriorityQueue<Edge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.panjangJalan, b.panjangJalan));
+            boolean[] connected = new boolean[size+1];
+            
+            int numConnected = 0;
+            int minCost = 0;
+
+            connected[from] = true;
+            numConnected++;
+
+            for (Edge e1 : adjacencyList.get(from)) {
+                for (Edge e2 : adjacencyList.get(e1.toId)) {
+                    pq.offer(e2);
+                }
+                numConnected++;
+                minCost += e1.panjangJalan;
+                connected[e1.toId] = true;
+            }   
+
+            while (numConnected < size) {
+                Edge jalan = pq.poll();
+                int explore = jalan.toId;
+                int panjangJalan = jalan.panjangJalan;
+
+                if (connected[explore]) continue;
+
+                // Connect edge ke spanning tree
+                connected[explore] = true;
+                numConnected++;
+                minCost += panjangJalan;
+
+                for (Edge e : adjacencyList.get(explore)) {
+                    if (!connected[e.toId]) pq.offer(e);
+                }
+            }
+            minCostSpanningTreeArr[from] = minCost;
+
+            return minCost;
+        }
+
+        int getMinSpanTree(int from) {
+            if (minCostSpanningTreeArr[from] == 0) {
+                return minSpanTree(from);
+            }
+            return minCostSpanningTreeArr[from];
+        }
+
+
 
     }
 
