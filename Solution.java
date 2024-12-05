@@ -39,10 +39,12 @@ public class Solution {
         }
 
         int P = in.nextInteger();
+        int[] guesses = new int[P];
         for (int i=0; i<P; i++) {
             int Pi = in.nextInteger();
-
+            guesses[i] = Pi;
         }
+        PasswordGraph pwGraph = new PasswordGraph(guesses);
 
         int Q = in.nextInteger();
         for (int i=0; i<Q; i++) {
@@ -66,6 +68,7 @@ public class Solution {
                     int password = in.nextInteger();
 
                     sofitaPosition = idM;
+                    out.println(M(pwGraph, password));
 
                     break;
 
@@ -120,10 +123,9 @@ public class Solution {
         return res;
     }
 
-    static int M(int id, int password) {
-
-        // TODO: Implement this method
-        return 0;
+    static int M(PasswordGraph pwGraph, int password) {
+        if (pwGraph.currentPassword == password) return 0;
+        return pwGraph.getSpt(password);
     }
 
     static int J(Graph graph, int id) {
@@ -138,6 +140,7 @@ public class Solution {
         int[] energyMaxToNotTraverse;
         Map<Integer, Map<Integer, Integer>> mapMaxKotaVisited;  // Menyimpan output query R yang sudah dilakukan agar tidak double compute maxKotaVisited, id -> (energi -> maxKota)
         int[][] shortestArr;
+        int password;
 
         Graph(int V) {
             size = V;
@@ -152,6 +155,7 @@ public class Solution {
             energyNeededToTraverseAll = new int[V+1];
             energyMaxToNotTraverse = new int[V+1];
             minCostSpanningTreeArr = new int[V+1];
+            password = 0;
         }
 
         void addEdge(int from, int to, int panjang) {
@@ -342,8 +346,6 @@ public class Solution {
             return minCostSpanningTreeArr[from];
         }
 
-
-
     }
 
     static class Edge {
@@ -359,6 +361,143 @@ public class Solution {
 
         void print() {
             System.out.println("Edge: " + fromId + " to " + toId + "(" + panjangJalan + ")");
+        }
+    }
+
+
+    static class PasswordGraph {
+        List<List<PasswordEdge>> adjacencyList;
+        boolean[] connected;
+        int currentPassword;
+        int[][] shortestArr;
+        int[] guesses;
+
+        PasswordGraph(int[] g) {
+            adjacencyList = new ArrayList<>();
+            shortestArr = new int[10000][10000];
+            for (int i = 0; i <= 9999; i++) {
+                adjacencyList.add(new ArrayList<>());
+                shortestArr[i] = null; 
+            }
+            connected = new boolean[10000];
+            Arrays.fill(connected, false);
+            currentPassword = 0; 
+            guesses = g;
+        }
+
+        void addEdge(int from, int to) {
+            List<PasswordEdge> fromList = adjacencyList.get(from);
+            fromList.add(new PasswordEdge(from, to, 1));
+        }
+
+        int operate(int a, int b) {
+            int d0 = ((a / 1000) + (b / 1000)) % 10;
+            int d1 = ((a / 100) + (b / 100)) % 10;
+            int d2 = ((a / 10) + (b / 10)) % 10;
+            int d3 = (a + b) % 10;
+            int res = (d0 * 1000) + (d1 * 100) + (d2 * 10) + d3;
+            return res;
+        }
+
+        void operateEdges(int source) {
+            if (connected[source]) return;
+
+            // System.out.println("Operating edges...");
+            // System.out.println("===========================");
+            // System.out.println("===========================");
+
+
+            for (int guess : guesses) {
+                int result = operate(source, guess);
+
+                // System.out.println("===========================");
+                // System.out.println("Guess = " + guess + ", source =  " + source);
+                // System.out.println("result = " + result);
+                // System.out.println("===========================");
+
+                addEdge(source, result);
+            }
+            connected[source] = true;
+        }
+
+        void printPQ(PriorityQueue<PasswordEdge> pq) {
+            System.out.println("PQ=PQ=PQ=PQ=PQ=PQ=PQ=PQ");
+            for (PasswordEdge e : pq) {
+                e.print();
+            }
+            System.out.println("PQ=PQ=PQ=PQ=PQ=PQ=PQ=PQ");
+        }
+
+        void build() {
+            if (!connected[currentPassword]) operateEdges(currentPassword); 
+
+            PriorityQueue<PasswordEdge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.weight, b.weight));
+            boolean[] visited = new boolean[10000];
+            int[] shortestPath = new int[10000];
+            Arrays.fill(shortestPath, Integer.MAX_VALUE);
+
+            visited[currentPassword] = true;
+            shortestPath[currentPassword] = 0;
+
+            for (PasswordEdge edge : adjacencyList.get(currentPassword)) {
+                shortestPath[edge.toId] = edge.weight;
+                pq.offer(edge);
+            }
+
+
+
+            while (!pq.isEmpty()) {
+                PasswordEdge edge = pq.poll();
+                int toId = edge.toId;
+                int fromId = edge.fromId;
+                
+                // System.out.println("Sebelum explore: ");
+                // printPQ(pq);
+
+                visited[fromId] = true;
+                if (!connected[toId]) operateEdges(toId);
+
+                for (PasswordEdge e : adjacencyList.get(toId)) {
+                    int totalWeight = shortestPath[e.fromId] + e.weight;
+                    if (!visited[e.toId] && totalWeight < shortestPath[e.toId]) {
+                        shortestPath[e.toId] = totalWeight;
+                        pq.offer(new PasswordEdge(e.fromId, e.toId, totalWeight));
+                    }
+                }
+                // System.out.println("Setelah explore: ");
+                // printPQ(pq);
+            }
+            shortestArr[currentPassword] = shortestPath;
+
+        }
+
+        int getSpt(int search) {
+            int get;
+
+            if (shortestArr[currentPassword] == null) {
+                build();
+            }
+            get = shortestArr[currentPassword][search];
+            
+            if (get == Integer.MAX_VALUE) return -1;
+            currentPassword = search;
+            return get;
+        }
+    }
+
+    static class PasswordEdge {
+        int fromId;
+        int toId;
+        int weight;
+        
+        PasswordEdge (int from, int to, int w) {
+            fromId = from;
+            toId = to;
+            weight = w;
+        }
+
+        void print() {
+            System.out.println("Edge = " + fromId + " to " + toId + "(" + weight + ")");
         }
     }
 
