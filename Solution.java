@@ -194,6 +194,12 @@ public class Solution {
             return visited;
         }
 
+        void printPQ(PriorityQueue<Edge> pq) {
+            for (Edge jalan : pq) {
+                jalan.print();
+            }
+        }
+
 
         int[] dijkstra(int from) {
             PriorityQueue<Edge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.panjangJalan, b.panjangJalan)); 
@@ -287,23 +293,29 @@ public class Solution {
         int minSpanTree(int from) {
             PriorityQueue<Edge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.panjangJalan, b.panjangJalan));
             boolean[] connected = new boolean[size+1];
-            
-            int numConnected = 0;
-            int minCost = 0;
 
+            int[] minCostArr = new int[size+1];
+            int minCost = 0;
             connected[from] = true;
-            numConnected++;
 
             for (Edge e1 : adjacencyList.get(from)) {
                 for (Edge e2 : adjacencyList.get(e1.toId)) {
-                    pq.offer(e2);
+                    if (!connected[e2.toId]) pq.offer(e2);
                 }
-                numConnected++;
+                // if (!connected[e1.toId]) {
                 minCost += e1.panjangJalan;
                 connected[e1.toId] = true;
+                minCostArr[e1.toId] = e1.panjangJalan;
+                // } else {
+                //     if (e1.panjangJalan < minCostArr[e1.toId]) {
+                //         minCost -= minCostArr[e1.toId];
+                //         minCostArr[e1.toId] = e1.panjangJalan;
+                //         minCost += e1.panjangJalan;
+                //     }
+                // }
             }   
 
-            while (numConnected < size) {
+            while (!pq.isEmpty()) {
                 Edge jalan = pq.poll();
                 int explore = jalan.toId;
                 int panjangJalan = jalan.panjangJalan;
@@ -312,7 +324,6 @@ public class Solution {
 
                 // Connect edge ke spanning tree
                 connected[explore] = true;
-                numConnected++;
                 minCost += panjangJalan;
 
                 for (Edge e : adjacencyList.get(explore)) {
