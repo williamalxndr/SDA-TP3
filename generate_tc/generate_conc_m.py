@@ -1,9 +1,8 @@
 import random
 
-with open(f"3.txt", "w") as f:
-    print("Halo")
+with open(f"testcase/M/MTLE.txt", "w") as f:
     # V is the number of vertices
-    V = random.randint(1, 100)
+    V = random.randint(1, 10)
     # Ensure E is at least V-1 (minimum for a connected graph) and respects the edge limits
     E = random.randint(V - 1, min(100, V * (V - 1) // 2))
     f.write(f"{V} {E}\n")
@@ -51,23 +50,8 @@ with open(f"3.txt", "w") as f:
         f.write(f"{p}\n")
 
     # Generate random queries
-    Q = random.randint(1, 20000)
+    Q = 20000
     f.write(f"{Q}\n")
-    for _ in range(Q):
-        query = random.choice(["J", "F", "R", "M"])
-        if query == "J":
-            id = random.randint(1, V+1)
-            f.write(f"J {id}\n")
-        elif query == "R":
-            energi = random.randint(1,101)
-            f.write(f"R {energi}\n")
-        elif query == "F":
-            tujuan = random.randint(1, V+1)
-            f.write(f"F {tujuan}\n")
-        elif query == "M":
-            id = random.randint(1, V+1)
-            password = random.randint(1, 10000)
-            f.write(f"M {id} {password}\n")
-
-            
-
+    for i in range(1, Q+1):
+        
+        f.write(f"M 2 {i:04d}\n")

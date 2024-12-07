@@ -44,7 +44,7 @@ public class Solution {
             int Pi = in.nextInteger();
             guesses[i] = Pi;
         }
-        PasswordGraph pwGraph = new PasswordGraph(guesses);
+        PasswordSolver pwGraph = new PasswordSolver(guesses);
 
         int Q = in.nextInteger();
         for (int i=0; i<Q; i++) {
@@ -123,9 +123,9 @@ public class Solution {
         return res;
     }
 
-    static int M(PasswordGraph pwGraph, int password) {
+    static int M(PasswordSolver pwGraph, int password) {
         if (pwGraph.currentPassword == password) return 0;
-        return pwGraph.getSpt(password);
+        return pwGraph.searchPassword(password);
     }
 
     static int J(Graph graph, int id) {
@@ -220,68 +220,23 @@ public class Solution {
                 shortest[jalan.toId] = jalan.panjangJalan;
             }
 
-            // for (Edge jalan : pq) {
-            //     System.out.print("Edge: " + jalan.fromId + " to : " + jalan.toId + " (" + jalan.panjangJalan + ")");
-            //     System.out.println();
-            // }
-
             while (!pq.isEmpty()) {
-                // System.out.println("Belum kosong");
                 Edge jalan = pq.poll();
-                // System.out.print("Exploring: ");
-                // jalan.print();
-
-                // System.out.println("======================");
-                // System.out.println("======================");
-                // System.out.println("Sebelum explore: ");
-                // for (Edge j : pq) {
-                //     System.out.print("Edge: " + j.fromId + " to : " + j.toId + " (" + j.panjangJalan + ")");
-                //     System.out.println();
-                // }
-                // System.out.println("======================");
-                // System.out.println("======================");
 
                 int fromId = jalan.fromId;
                 int toId = jalan.toId;
-
                 visited[fromId] = true;
-
-                // System.out.println("======================");
-                // System.out.println("Visited: " + Arrays.toString(visited));
-                // System.out.println("Shortest: " + Arrays.toString(shortest));
-                // System.out.println("======================");
 
                 for (Edge e : adjacencyList.get(toId)) {
                     int totalPanjangJalan = shortest[e.fromId] + e.panjangJalan;
-                    // System.out.println("======================");
-                    // System.out.print("See edge: ");
-                    // e.print();
 
-                    // System.out.println("Total Panjang Jalan: " + shortest[e.fromId] + "(shortest[fromId]) + " + e.panjangJalan + "(e.panjangJalan)");
-                    // System.out.println("Total Panjang Jalan: " + totalPanjangJalan);
-
-                    // System.out.println("======================");
                     if (!visited[e.toId] && totalPanjangJalan < shortest[e.toId]) {
                         shortest[e.toId] = totalPanjangJalan;
                         pq.offer(new Edge(e.fromId, e.toId, totalPanjangJalan));
                     }
                 }
 
-                // System.out.println("======================");
-                // System.out.println("======================");
-
-                // System.out.println("Setelah explore: ");
-                // for (Edge j : pq) {
-                //     System.out.print("Edge: " + j.fromId + " to : " + j.toId + " (" + j.panjangJalan + ")");
-                //     System.out.println();
-                // }
-                // System.out.println("======================");
-                // System.out.println("======================");
-
-
             }
-
-            // System.out.println("From: " + from + ". Array: " + Arrays.toString(shortest));
 
             shortestArr[from] = shortest;
             return shortest;
@@ -306,17 +261,9 @@ public class Solution {
                 for (Edge e2 : adjacencyList.get(e1.toId)) {
                     if (!connected[e2.toId]) pq.offer(e2);
                 }
-                // if (!connected[e1.toId]) {
                 minCost += e1.panjangJalan;
                 connected[e1.toId] = true;
                 minCostArr[e1.toId] = e1.panjangJalan;
-                // } else {
-                //     if (e1.panjangJalan < minCostArr[e1.toId]) {
-                //         minCost -= minCostArr[e1.toId];
-                //         minCostArr[e1.toId] = e1.panjangJalan;
-                //         minCost += e1.panjangJalan;
-                //     }
-                // }
             }   
 
             while (!pq.isEmpty()) {
@@ -365,29 +312,15 @@ public class Solution {
     }
 
 
-    static class PasswordGraph {
-        List<List<PasswordEdge>> adjacencyList;
+    static class PasswordSolver {
         boolean[] connected;
         int currentPassword;
-        int[][] shortestArr;
+        Map<Integer, Map<Integer, Integer>> mapShortestPassword;
         int[] guesses;
 
-        PasswordGraph(int[] g) {
-            adjacencyList = new ArrayList<>();
-            shortestArr = new int[10000][10000];
-            for (int i = 0; i <= 9999; i++) {
-                adjacencyList.add(new ArrayList<>());
-                shortestArr[i] = null; 
-            }
-            connected = new boolean[10000];
-            Arrays.fill(connected, false);
+        PasswordSolver(int[] g) {
             currentPassword = 0; 
             guesses = g;
-        }
-
-        void addEdge(int from, int to) {
-            List<PasswordEdge> fromList = adjacencyList.get(from);
-            fromList.add(new PasswordEdge(from, to, 1));
         }
 
         int operate(int a, int b) {
@@ -399,106 +332,56 @@ public class Solution {
             return res;
         }
 
-        void operateEdges(int source) {
-            if (connected[source]) return;
 
-            // System.out.println("Operating edges...");
-            // System.out.println("===========================");
-            // System.out.println("===========================");
+        int searchPassword(int search) {
+            // System.out.println("M " + search);
 
-
-            for (int guess : guesses) {
-                int result = operate(source, guess);
-
-                // System.out.println("===========================");
-                // System.out.println("Guess = " + guess + ", source =  " + source);
-                // System.out.println("result = " + result);
-                // System.out.println("===========================");
-
-                addEdge(source, result);
-            }
-            connected[source] = true;
-        }
-
-        void printPQ(PriorityQueue<PasswordEdge> pq) {
-            System.out.println("PQ=PQ=PQ=PQ=PQ=PQ=PQ=PQ");
-            for (PasswordEdge e : pq) {
-                e.print();
-            }
-            System.out.println("PQ=PQ=PQ=PQ=PQ=PQ=PQ=PQ");
-        }
-
-        void build() {
-            if (!connected[currentPassword]) operateEdges(currentPassword); 
-
-            PriorityQueue<PasswordEdge> pq = new PriorityQueue<>((a,b) -> Integer.compare(a.weight, b.weight));
+            Queue<int[]> queue = new LinkedList<>();  // [from, to, weight]
             boolean[] visited = new boolean[10000];
             int[] shortestPath = new int[10000];
             Arrays.fill(shortestPath, Integer.MAX_VALUE);
 
-            visited[currentPassword] = true;
             shortestPath[currentPassword] = 0;
 
-            for (PasswordEdge edge : adjacencyList.get(currentPassword)) {
-                shortestPath[edge.toId] = edge.weight;
-                pq.offer(edge);
-            }
+            queue.offer(new int[]{currentPassword, 0});
 
-
-
-            while (!pq.isEmpty()) {
-                PasswordEdge edge = pq.poll();
-                int toId = edge.toId;
-                int fromId = edge.fromId;
-                
+            while (!queue.isEmpty()) {
                 // System.out.println("Sebelum explore: ");
                 // printPQ(pq);
 
-                visited[fromId] = true;
-                if (!connected[toId]) operateEdges(toId);
+                int[] explore = queue.poll();
+                int pwd = explore[0];
+                int dist = explore[1];
 
-                for (PasswordEdge e : adjacencyList.get(toId)) {
-                    int totalWeight = shortestPath[e.fromId] + e.weight;
-                    if (!visited[e.toId] && totalWeight < shortestPath[e.toId]) {
-                        shortestPath[e.toId] = totalWeight;
-                        pq.offer(new PasswordEdge(e.fromId, e.toId, totalWeight));
+                if (pwd == search) {
+                    currentPassword = search;
+                    return dist;
+                }
+
+                if (visited[pwd]) continue;
+                visited[pwd] = true;
+
+                for (int guess : guesses) {
+                    int hasil = operate(pwd, guess);
+
+                    if (hasil == search) {
+                        currentPassword = search;
+                        return dist + 1;
+                    }
+
+                    if (!visited[hasil] && (dist + 1) < shortestPath[hasil]) {
+                        shortestPath[hasil] = dist + 1;
+                        queue.offer(new int[] {hasil, dist+1});
                     }
                 }
                 // System.out.println("Setelah explore: ");
                 // printPQ(pq);
             }
-            shortestArr[currentPassword] = shortestPath;
+            return -1;
 
         }
 
-        int getSpt(int search) {
-            int get;
 
-            if (shortestArr[currentPassword] == null) {
-                build();
-            }
-            get = shortestArr[currentPassword][search];
-            
-            if (get == Integer.MAX_VALUE) return -1;
-            currentPassword = search;
-            return get;
-        }
-    }
-
-    static class PasswordEdge {
-        int fromId;
-        int toId;
-        int weight;
-        
-        PasswordEdge (int from, int to, int w) {
-            fromId = from;
-            toId = to;
-            weight = w;
-        }
-
-        void print() {
-            System.out.println("Edge = " + fromId + " to " + toId + "(" + weight + ")");
-        }
     }
 
 
